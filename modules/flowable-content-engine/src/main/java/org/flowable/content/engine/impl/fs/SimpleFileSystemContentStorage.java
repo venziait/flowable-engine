@@ -45,6 +45,8 @@ public class SimpleFileSystemContentStorage implements ContentStorage {
     private static final Logger LOGGER = LoggerFactory.getLogger(SimpleFileSystemContentStorage.class);
 
     private static TimeBasedGenerator UUID_GENERATOR = Generators.timeBasedGenerator(EthernetAddress.fromInterface());
+    
+    public static final String STORE_NAME = "file";
 
     private static final String TEMP_SUFFIX = "_TEMP";
     private static final String OLD_SUFFIX = "_OLD";
@@ -244,7 +246,7 @@ public class SimpleFileSystemContentStorage implements ContentStorage {
 
     @Override
     public String getContentStoreName() {
-        return "file";
+        return SimpleFileSystemContentStorage.STORE_NAME;
     }
 
     protected File getContentFile(Map<String, Object> metaData, String contentId) {

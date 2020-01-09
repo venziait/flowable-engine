@@ -37,6 +37,7 @@ import org.flowable.content.api.ContentStorage;
 import org.flowable.content.engine.impl.ContentEngineImpl;
 import org.flowable.content.engine.impl.ContentManagementServiceImpl;
 import org.flowable.content.engine.impl.ContentServiceImpl;
+import org.flowable.content.engine.impl.alf.SimpleAlfrescoContentStorage;
 import org.flowable.content.engine.impl.cfg.StandaloneContentEngineConfiguration;
 import org.flowable.content.engine.impl.cfg.StandaloneInMemContentEngineConfiguration;
 import org.flowable.content.engine.impl.cmd.SchemaOperationsContentEngineBuild;
@@ -49,6 +50,7 @@ import org.flowable.content.engine.impl.persistence.entity.TableDataManager;
 import org.flowable.content.engine.impl.persistence.entity.TableDataManagerImpl;
 import org.flowable.content.engine.impl.persistence.entity.data.ContentItemDataManager;
 import org.flowable.content.engine.impl.persistence.entity.data.impl.MybatisContentItemDataManager;
+
 
 public class ContentEngineConfiguration extends AbstractEngineConfiguration implements ContentEngineConfigurationApi {
 
@@ -67,12 +69,21 @@ public class ContentEngineConfiguration extends AbstractEngineConfiguration impl
     // DATA MANAGERS ///////////////////////////////////////////////////
 
     protected ContentItemDataManager contentItemDataManager;
+    
 
     // ADDITIONAL SERVICES /////////////////////////////////////////////
 
     protected ContentStorage contentStorage;
     protected String contentRootFolder;
     protected boolean createContentRootFolder = true;
+    
+    protected String contentStorageType = SimpleFileSystemContentStorage.STORE_NAME;
+    
+    protected String alfrescoUrl;
+
+    protected String alfrescoUserName;
+
+    protected String alfrescoPassword;
 
     // ENTITY MANAGERS /////////////////////////////////////////////////
     protected ContentItemEntityManager contentItemEntityManager;
@@ -180,20 +191,29 @@ public class ContentEngineConfiguration extends AbstractEngineConfiguration impl
 
     public void initContentStorage() {
         if (contentStorage == null) {
-            if (contentRootFolder == null) {
-                contentRootFolder = System.getProperty("user.home") + File.separator + "content";
+        	if (contentStorageType.equals(SimpleFileSystemContentStorage.STORE_NAME)) {
+                if (contentRootFolder == null) {
+                    contentRootFolder = System.getProperty("user.home") + File.separator + "content";
+                }
+    
+                File contentRootFile = new File(contentRootFolder);
+                if (createContentRootFolder && !contentRootFile.exists()) {
+                    contentRootFile.mkdirs();
+                }
+    
+                if (contentRootFile != null && contentRootFile.exists()) {
+                    logger.info("Content file system root : {}", contentRootFile.getAbsolutePath());
+                }
+    
+                contentStorage = new SimpleFileSystemContentStorage(contentRootFile);
+                
+            } else if (contentStorageType.equals(SimpleAlfrescoContentStorage.STORE_NAME)) {
+            	
+                contentStorage = new SimpleAlfrescoContentStorage(this);
+                
+            } else {
+                throw new RuntimeException("Unknown content storage type '" + contentStorageType + "'");
             }
-
-            File contentRootFile = new File(contentRootFolder);
-            if (createContentRootFolder && !contentRootFile.exists()) {
-                contentRootFile.mkdirs();
-            }
-
-            if (contentRootFile != null && contentRootFile.exists()) {
-                logger.info("Content file system root : {}", contentRootFile.getAbsolutePath());
-            }
-
-            contentStorage = new SimpleFileSystemContentStorage(contentRootFile);
         }
     }
 
@@ -449,8 +469,45 @@ public class ContentEngineConfiguration extends AbstractEngineConfiguration impl
         this.contentStorage = contentStorage;
         return this;
     }
+    
+    public String getContentStorageType() {
+        return contentStorageType;
+    }
+  
+    public ContentEngineConfiguration setContentStorageType(String contentStorageType) {
+        this.contentStorageType = contentStorageType;
+        return this;
+    }
+    
+    //Alfresco properties config.
+    public String getAlfrescoUrl() {
+		return alfrescoUrl;
+	}
 
-    public String getContentRootFolder() {
+	public ContentEngineConfiguration setAlfrescoUrl(String alfrescoUrl) {
+		this.alfrescoUrl = alfrescoUrl;
+		return this;
+	}
+
+	public String getAlfrescoUserName() {
+		return alfrescoUserName;
+	}
+
+	public ContentEngineConfiguration setAlfrescoUserName(String alfrescoUserName) {
+		this.alfrescoUserName = alfrescoUserName;
+		return this;
+	}
+
+	public String getAlfrescoPassword() {
+		return alfrescoPassword;
+	}
+
+	public ContentEngineConfiguration setAlfrescoPassword(String alfrescoPassword) {
+		this.alfrescoPassword = alfrescoPassword;
+		return this;
+	}
+
+	public String getContentRootFolder() {
         return contentRootFolder;
     }
 
@@ -545,4 +602,6 @@ public class ContentEngineConfiguration extends AbstractEngineConfiguration impl
         this.clock = clock;
         return this;
     }
+    
+	
 }
